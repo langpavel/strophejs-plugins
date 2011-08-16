@@ -12,63 +12,53 @@
 
 Strophe.addConnectionPlugin('ping',
 {
-  _connection: null,
-  
-  // called by the Strophe.Connection constructor
+	_c: null,
 
-  init: function( conn ){
-    
-    this._connection = conn;
-    Strophe.addNamespace( 'PING', "urn:xmpp:ping" );            
-  },
-  
-  /**
-   * Function: ping
-   * 
-   * Parameters:
-   * (String) to	- the JID you want to ping
-   * (Function) success	- Callback function on success
-   * (Function) error	- Callback function on error
-   */
-  
-  ping: function( jid, success, error ){
+	// called by the Strophe.Connection constructor
+	init: function(conn) {
+		this._c = conn;
+		Strophe.addNamespace( 'PING', "urn:xmpp:ping" );
+	},
 
-    var id = this._connection.getUniqueId('ping');
-        
-    var iq = $iq({ type:'get', to: jid, id: id }).c('ping', { xmlns: Strophe.NS.PING } );
-    this._connection.sendIQ( iq, success, error );
-    
-  },
-  
-  /**
-   * Function: pong
-   * 
-   * Parameters:
-   * (Object) ping	-
-   * (Function) success	-
-   * (Function) error	-
-   */*
-  pong: function( ping, success, error ){
-    
-    var from = ping.getAttribute('from');
-    var id = ping.getAttribute('id');
-    
-    var iq = $iq({ type:'result', to: from, id: id });
-    this._connection.sendIQ( iq, success, error );
-    
-  },
-  
-  /**
-   * Function: addPingHandler
-   * 
-   * Parameters:
-   * (Function) handler - Ping handler
-   * 
-   * Returns:
-   * A reference to the handler that can be used to remove it.
-   */
-  
-  addPingHandler: function( handler ){
-    return this._connection.addHandler( handler, Strophe.NS.PING, "iq", "get" );    
-  },
+	/**
+	 * Function: ping
+	 * 
+	 * Parameters:
+	 * (String) to	- the JID you want to ping
+	 * (Function) success	- Callback function on success
+	 * (Function) error	- Callback function on error
+	 */
+	ping: function(jid, success, error) {
+		var id = this._c.getUniqueId('ping');
+		var iq = $iq({ type:'get', to: jid, id: id }).c('ping', { xmlns: Strophe.NS.PING } );
+		this._c.sendIQ(iq, success, error);
+	},
+
+	/**
+	 * Function: pong
+	 * 
+	 * Parameters:
+	 * (Object) ping	-
+	 * (Function) success	-
+	 * (Function) error	-
+	 */
+	pong: function(ping, success, error) {
+		var from = ping.getAttribute('from');
+		var id = ping.getAttribute('id');
+		var iq = $iq({ type:'result', to: from, id: id });
+		this._c.sendIQ( iq, success, error );
+	},
+
+	/**
+	 * Function: addPingHandler
+	 * 
+	 * Parameters:
+	 * (Function) handler - Ping handler
+	 * 
+	 * Returns:
+	 * A reference to the handler that can be used to remove it.
+	 */
+	addPingHandler: function(handler) {
+		return this._c.addHandler(handler, Strophe.NS.PING, "iq", "get");
+	},
 });
