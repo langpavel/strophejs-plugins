@@ -8,27 +8,63 @@
 
 # NOTE: This plugin has following dependencies:
 #
-# - Strophe.disco.js
+# - strophe.disco.js (by François de Metz)
 # - sha1.js
 
 Strophe.addConnectionPlugin 'caps', (->
 
   conn = null
+  dummyId = category: "client", type:"pc", name: "strophe", lang:""
 
   init = ( c ) ->
     conn = c
     Strophe.addNamespace 'CAPS', "http://jabber.org/protocol/caps"
-    conn.disco.addNode Strophe.NS.CAPS
+    conn.disco.addFeature Strophe.NS.CAPS
+    conn.disco.addFeature Strophe.NS.DISCO_INFO
+    if conn.disco is undefined
+      throw new Error "disco plugin required!"
+    if typeof b64_sha1 isnt 'function'
+      throw new Error "SHA-1 library required!"
 
-  addNode = (node, opts) -> conn.disco.addNode node, opts
+  addFeature = (feature) -> conn.disco.addFeature feature
 
-  sendPres = -> conn.send $pres().c "c",
-    xmlns: Strophe.NS.CAPS
-    hash: "sha-1"
-    node: conn.disco.identity.name
-    ver: generateVerificationString()
+  removeFeature = (feature) -> conn.disco.removeFeature feature
+
+  sendPres = -> conn.send $pres().cnode( createCapsNode().tree() )
+
+  createCapsNode = ->
+
+    if conn.disco._identities.length > 0
+      node = conn.disco._identities[0].name || ""
+    else
+      node = dummyId.name
+
+    $build "c",
+      xmlns: Strophe.NS.CAPS
+      hash: "sha-1"
+      node: node
+      ver: generateVerificationString()
+
+  propertySort = (array, property) ->
+    array.sort (a,b) ->
+      if (a[property] > b[property]) then -1 else 1
 
   generateVerificationString = ->
+
+    ## Prepare
+
+    # copy the original identities
+    ids = []
+    ids.push(i) for i in conn.disco._identities
+
+    # copy the original features
+    features = []
+    features.push(k) for k in conn.disco._features
+
+    # chek if there are identities
+    if ids.length is 0 then ids.push dummyId
+
+    ## Generate string
 
     # 1. Initialize an empty string S.
 
@@ -40,19 +76,18 @@ Strophe.addConnectionPlugin 'caps', (->
     # included (in accordance with XEP-0030, the category and type MUST be
     # included.
 
-    # not implemented yet
+    propertySort( ids, "category" )
+    propertySort( ids, "type" )
+    propertySort( ids, "lang" )
 
     # 3. For each identity, append the 'category/type/lang/name' to S, followed by
     # the '<' character.
 
-    S += "client/pc//#{conn.disco.identity.name}<"
+    for key, id of ids
+      S += "#{id.category}/#{id.type}/#{id.lang}/#{id.name}<"
 
     # 4. Sort the supported service discovery features.
-    
-    features = []
 
-    for ns of conn.disco.features
-      features.push ns
     features.sort()
 
     # 5. For each feature, append the feature to S, followed by the '<' character.
@@ -69,7 +104,7 @@ Strophe.addConnectionPlugin 'caps', (->
     # 7. For each extended service discovery information form:
 
     #  a) Append the XML character data of the FORM_TYPE field's <value/> element,
-    #  followed by the '<' character.
+    #     followed by the '<' character.
 
     # not implemented yet
 
@@ -79,17 +114,17 @@ Strophe.addConnectionPlugin 'caps', (->
 
     #  c) For each field other than FORM_TYPE:
 
-    #     i. Append the value of the "var" attribute, followed by the '<'
-    #     character.
+    #     i.  Append the value of the "var" attribute, followed by the '<'
+    #         character.
 
     # not implemented yet
 
-    #    ii. Sort values by the XML character data of the <value/> element.
+    #    ii.  Sort values by the XML character data of the <value/> element.
 
     # not implemented yet
 
-    #   iii. For each <value/> element, append the XML character data, followed by
-    #   the '<' character.
+    #   iii.  For each <value/> element, append the XML character data, followed by
+    #         the '<' character.
 
     # not implemented yet
 
@@ -106,10 +141,12 @@ Strophe.addConnectionPlugin 'caps', (->
     "#{b64_sha1 S}="
 
   # Public API
-  
+
   init: init
-  addNode: addNode
+  removeFeature: removeFeature
+  addFeature: addFeature
   sendPres: sendPres
   generateVerificationString: generateVerificationString
+  createCapsNode: createCapsNode
 
 )()
