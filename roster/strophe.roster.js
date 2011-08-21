@@ -1,35 +1,25 @@
-// debug function.
-var DD = DD || function(){/* console.debug('DD', arguments); */}; 
+Strophe.Contact = function() {
+	this.jid = '';
+	this.name = '';
+	this.approved = '';
+	this.subscription = 'none';
+	this.resources = {};
+	this.ask = '';
+	this.groups = [];
+};
 
-Strophe.Contact = Class.create({
-	
-	initialize: function()
+Strophe.Contact.prototype.isOnline = function() {
+	var k;
+	for(k in this.resources)
 	{
-		this.jid = '';
-		this.name = '';
-		this.approved = '';
-		this.subscription = 'none';
-		this.resources = {};
-		this.ask = '';
-		this.groups = [];
-	},
+		return true;
+	}
+	return false;
+};
 	
-	isOnline: function()
-	{
-		var k;
-		for(k in this.resources)
-		{
-			return true;
-		}
-		return false;
-	},
-	
-	readFromItem: function(item)
-	{
-		return Strophe.Contact.readFromItem(this, item);
-	},
-	
-});
+Strophe.Contact.prototype.readFromItem = function(item) {
+	return Strophe.Contact.readFromItem(this, item);
+};
 
 /**
  * Read contact from XML roster item
